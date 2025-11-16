@@ -223,9 +223,45 @@ const ProblemDetail = () => {
       // Create a safe execution context
       const startTime = performance.now()
       
-      // Wrap user code in a function and execute
       // Extract function name from problem title (convert to camelCase)
-      const functionName = problem?.title?.replace(/\s+/g, '') || 'solution';
+      // Handle special cases for common problems
+      let functionName = '';
+      if (problem?.title) {
+        if (problem.title.includes('Two Sum')) {
+          functionName = 'twoSum';
+        } else if (problem.title.includes('Merge') && problem.title.includes('List')) {
+          functionName = 'mergeTwoLists';
+        } else if (problem.title.includes('Contains Duplicate')) {
+          functionName = 'containsDuplicate';
+        } else if (problem.title.includes('Move Zeroes')) {
+          functionName = 'moveZeroes';
+        } else if (problem.title.includes('Product of Array Except Self')) {
+          functionName = 'productExceptSelf';
+        } else if (problem.title.includes('3Sum')) {
+          functionName = 'threeSum';
+        } else if (problem.title.includes('Trapping Rain Water')) {
+          functionName = 'trap';
+        } else if (problem.title.includes('Longest Substring Without Repeating Characters')) {
+          functionName = 'lengthOfLongestSubstring';
+        } else if (problem.title.includes('Group Anagrams')) {
+          functionName = 'groupAnagrams';
+        } else if (problem.title.includes('Palindrome Permutation')) {
+          functionName = 'canPermutePalindrome';
+        } else {
+          // Generic conversion to camelCase
+          functionName = problem.title
+            .replace(/[^a-zA-Z0-9\s]/g, '') // Remove special characters
+            .split(' ')
+            .map((word, index) => 
+              index === 0 
+                ? word.charAt(0).toLowerCase() + word.slice(1) 
+                : word.charAt(0).toUpperCase() + word.slice(1)
+            )
+            .join('');
+        }
+      } else {
+        functionName = 'solution';
+      }
       
       // Handle different problem types
       let functionCall = '';
@@ -235,12 +271,44 @@ const ProblemDetail = () => {
       } else if (problem?.title?.includes('Merge') && problem?.title?.includes('List')) {
         // Merge Two Sorted Lists: mergeTwoLists(list1, list2)
         functionCall = `${functionName}(${JSON.stringify(testInput.list1)}, ${JSON.stringify(testInput.list2)})`;
+      } else if (problem?.title?.includes('Contains Duplicate')) {
+        // Contains Duplicate: containsDuplicate(nums)
+        functionCall = `${functionName}(${JSON.stringify(testInput.nums)})`;
+      } else if (problem?.title?.includes('Move Zeroes')) {
+        // Move Zeroes: moveZeroes(nums)
+        functionCall = `${functionName}(${JSON.stringify(testInput.nums)})`;
+      } else if (problem?.title?.includes('Product of Array Except Self')) {
+        // Product of Array Except Self: productExceptSelf(nums)
+        functionCall = `${functionName}(${JSON.stringify(testInput.nums)})`;
+      } else if (problem?.title?.includes('3Sum')) {
+        // 3Sum: threeSum(nums)
+        functionCall = `${functionName}(${JSON.stringify(testInput.nums)})`;
+      } else if (problem?.title?.includes('Trapping Rain Water')) {
+        // Trapping Rain Water: trap(height)
+        functionCall = `${functionName}(${JSON.stringify(testInput.height)})`;
+      } else if (problem?.title?.includes('Longest Substring Without Repeating Characters')) {
+        // Longest Substring: lengthOfLongestSubstring(s)
+        functionCall = `${functionName}("${testInput.s}")`;
+      } else if (problem?.title?.includes('Group Anagrams')) {
+        // Group Anagrams: groupAnagrams(strs)
+        functionCall = `${functionName}(${JSON.stringify(testInput.strs)})`;
+      } else if (problem?.title?.includes('Palindrome Permutation')) {
+        // Palindrome Permutation: canPermutePalindrome(s)
+        functionCall = `${functionName}("${testInput.s}")`;
       } else {
         // Default fallback - assume first parameter is an array and second is a target
         if (testInput.nums && testInput.target !== undefined) {
           functionCall = `${functionName}(${JSON.stringify(testInput.nums)}, ${testInput.target})`;
         } else if (testInput.list1 && testInput.list2) {
           functionCall = `${functionName}(${JSON.stringify(testInput.list1)}, ${JSON.stringify(testInput.list2)})`;
+        } else if (testInput.nums) {
+          functionCall = `${functionName}(${JSON.stringify(testInput.nums)})`;
+        } else if (testInput.s) {
+          functionCall = `${functionName}("${testInput.s}")`;
+        } else if (testInput.strs) {
+          functionCall = `${functionName}(${JSON.stringify(testInput.strs)})`;
+        } else if (testInput.height) {
+          functionCall = `${functionName}(${JSON.stringify(testInput.height)})`;
         } else {
           // Generic call with all inputs
           const inputValues = Object.values(testInput);
@@ -304,6 +372,94 @@ const ProblemDetail = () => {
                 output: JSON.parse(ex.output)
               }
             }
+          } else if (problem.title.includes('Contains Duplicate')) {
+            // Contains Duplicate pattern: nums = [1,2,3,1]
+            const inputMatch = ex.input.match(/nums = (\[.*?\])/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  nums: JSON.parse(inputMatch[1])
+                },
+                output: ex.output === 'true' || ex.output === 'false' ? ex.output === 'true' : JSON.parse(ex.output)
+              }
+            }
+          } else if (problem.title.includes('Move Zeroes')) {
+            // Move Zeroes pattern: nums = [0,1,0,3,12]
+            const inputMatch = ex.input.match(/nums = (\[.*?\])/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  nums: JSON.parse(inputMatch[1])
+                },
+                output: JSON.parse(ex.output)
+              }
+            }
+          } else if (problem.title.includes('Product of Array Except Self')) {
+            // Product of Array Except Self pattern: nums = [1,2,3,4]
+            const inputMatch = ex.input.match(/nums = (\[.*?\])/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  nums: JSON.parse(inputMatch[1])
+                },
+                output: JSON.parse(ex.output)
+              }
+            }
+          } else if (problem.title.includes('3Sum')) {
+            // 3Sum pattern: nums = [-1,0,1,2,-1,-4]
+            const inputMatch = ex.input.match(/nums = (\[.*?\])/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  nums: JSON.parse(inputMatch[1])
+                },
+                output: JSON.parse(ex.output)
+              }
+            }
+          } else if (problem.title.includes('Trapping Rain Water')) {
+            // Trapping Rain Water pattern: height = [0,1,0,2,1,0,1,3,2,1,2,1]
+            const inputMatch = ex.input.match(/height = (\[.*?\])/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  height: JSON.parse(inputMatch[1])
+                },
+                output: parseInt(ex.output)
+              }
+            }
+          } else if (problem.title.includes('Longest Substring Without Repeating Characters')) {
+            // Longest Substring pattern: s = "abcabcbb"
+            const inputMatch = ex.input.match(/s = "(.*?)"/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  s: inputMatch[1]
+                },
+                output: parseInt(ex.output)
+              }
+            }
+          } else if (problem.title.includes('Group Anagrams')) {
+            // Group Anagrams pattern: strs = ["eat","tea","tan","ate","nat","bat"]
+            const inputMatch = ex.input.match(/strs = (\[.*?\])/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  strs: JSON.parse(inputMatch[1])
+                },
+                output: JSON.parse(ex.output)
+              }
+            }
+          } else if (problem.title.includes('Palindrome Permutation')) {
+            // Palindrome Permutation pattern: s = "code"
+            const inputMatch = ex.input.match(/s = "(.*?)"/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  s: inputMatch[1]
+                },
+                output: ex.output === 'true' || ex.output === 'false' ? ex.output === 'true' : JSON.parse(ex.output)
+              }
+            }
           } else {
             // Default fallback - try to parse as arrays
             try {
@@ -335,13 +491,64 @@ const ProblemDetail = () => {
         allTestCases = [
           { input: { nums: [2, 7, 11, 15], target: 9 }, output: [0, 1] },
           { input: { nums: [3, 2, 4], target: 6 }, output: [1, 2] },
-          { input: { nums: [3, 3], target: 6 }, output: [0, 1] }
+          { input: { nums: [3, 3], target: 6 }, output: [0, 1] },
+          { input: { nums: [1, 5, 8, 10, 13], target: 18 }, output: [2, 4] },
+          { input: { nums: [0, 4, 3, 0], target: 0 }, output: [0, 3] }
         ]
       } else if (problem?.title?.includes('Merge') && problem?.title?.includes('List')) {
         allTestCases = [
           { input: { list1: [1,2,4], list2: [1,3,4] }, output: [1,1,2,3,4,4] },
           { input: { list1: [], list2: [] }, output: [] },
-          { input: { list1: [], list2: [0] }, output: [0] }
+          { input: { list1: [], list2: [0] }, output: [0] },
+          { input: { list1: [2], list2: [1] }, output: [1,2] }
+        ]
+      } else if (problem?.title?.includes('Contains Duplicate')) {
+        allTestCases = [
+          { input: { nums: [1,2,3,1] }, output: true },
+          { input: { nums: [1,2,3,4] }, output: false },
+          { input: { nums: [1,1,1,3,3,4,3,2,4,2] }, output: true }
+        ]
+      } else if (problem?.title?.includes('Move Zeroes')) {
+        allTestCases = [
+          { input: { nums: [0,1,0,3,12] }, output: [1,3,12,0,0] },
+          { input: { nums: [0] }, output: [0] },
+          { input: { nums: [1,2,3] }, output: [1,2,3] }
+        ]
+      } else if (problem?.title?.includes('Product of Array Except Self')) {
+        allTestCases = [
+          { input: { nums: [1,2,3,4] }, output: [24,12,8,6] },
+          { input: { nums: [-1,1,0,-3,3] }, output: [0,0,9,0,0] },
+          { input: { nums: [2,3,4,5] }, output: [60,40,30,24] }
+        ]
+      } else if (problem?.title?.includes('3Sum')) {
+        allTestCases = [
+          { input: { nums: [-1,0,1,2,-1,-4] }, output: [[-1,-1,2],[-1,0,1]] },
+          { input: { nums: [0,1,1] }, output: [] },
+          { input: { nums: [0,0,0] }, output: [[0,0,0]] }
+        ]
+      } else if (problem?.title?.includes('Trapping Rain Water')) {
+        allTestCases = [
+          { input: { height: [0,1,0,2,1,0,1,3,2,1,2,1] }, output: 6 },
+          { input: { height: [4,2,0,3,2,5] }, output: 9 },
+          { input: { height: [3,0,2,0,4] }, output: 7 }
+        ]
+      } else if (problem?.title?.includes('Longest Substring Without Repeating Characters')) {
+        allTestCases = [
+          { input: { s: "abcabcbb" }, output: 3 },
+          { input: { s: "bbbbb" }, output: 1 },
+          { input: { s: "pwwkew" }, output: 3 }
+        ]
+      } else if (problem?.title?.includes('Group Anagrams')) {
+        allTestCases = [
+          { input: { strs: ["eat","tea","tan","ate","nat","bat"] }, output: [["bat"],["nat","tan"],["ate","eat","tea"]] },
+          { input: { strs: [""] }, output: [[""]] },
+          { input: { strs: ["a"] }, output: [["a"]] }
+        ]
+      } else if (problem?.title?.includes('Palindrome Permutation')) {
+        allTestCases = [
+          { input: { s: "code" }, output: false },
+          { input: { s: "aab" }, output: true },
+          { input: { s: "carerac" }, output: true }
         ]
       } else {
         // Generic fallback
@@ -376,10 +583,26 @@ const ProblemDetail = () => {
           if (problem?.title?.includes('Merge') && problem?.title?.includes('List')) {
             // For merge lists, exact order matters
             isCorrect = JSON.stringify(actualOutput) === JSON.stringify(testCase.output);
+          } else if (problem?.title?.includes('3Sum')) {
+            // For 3Sum, we need to sort both the outer array and inner arrays for comparison
+            const sortedActual = actualOutput.map(arr => arr.sort((a, b) => a - b)).sort();
+            const sortedExpected = testCase.output.map(arr => arr.sort((a, b) => a - b)).sort();
+            isCorrect = JSON.stringify(sortedActual) === JSON.stringify(sortedExpected);
+          } else if (problem?.title?.includes('Group Anagrams')) {
+            // For Group Anagrams, we need to sort both the outer array and inner arrays for comparison
+            const sortedActual = actualOutput.map(arr => arr.sort()).sort();
+            const sortedExpected = testCase.output.map(arr => arr.sort()).sort();
+            isCorrect = JSON.stringify(sortedActual) === JSON.stringify(sortedExpected);
           } else {
             // For other arrays (like Two Sum), order might not matter
             isCorrect = JSON.stringify(actualOutput?.sort()) === JSON.stringify(testCase.output?.sort());
           }
+        } else if (typeof actualOutput === 'boolean' && typeof testCase.output === 'boolean') {
+          // For boolean outputs
+          isCorrect = actualOutput === testCase.output;
+        } else if (typeof actualOutput === 'number' && typeof testCase.output === 'number') {
+          // For numeric outputs
+          isCorrect = actualOutput === testCase.output;
         } else {
           // For non-array outputs, direct comparison
           isCorrect = JSON.stringify(actualOutput) === JSON.stringify(testCase.output);
@@ -449,6 +672,94 @@ const ProblemDetail = () => {
                 output: JSON.parse(ex.output)
               }
             }
+          } else if (problem.title.includes('Contains Duplicate')) {
+            // Contains Duplicate pattern: nums = [1,2,3,1]
+            const inputMatch = ex.input.match(/nums = (\[.*?\])/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  nums: JSON.parse(inputMatch[1])
+                },
+                output: ex.output === 'true' || ex.output === 'false' ? ex.output === 'true' : JSON.parse(ex.output)
+              }
+            }
+          } else if (problem.title.includes('Move Zeroes')) {
+            // Move Zeroes pattern: nums = [0,1,0,3,12]
+            const inputMatch = ex.input.match(/nums = (\[.*?\])/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  nums: JSON.parse(inputMatch[1])
+                },
+                output: JSON.parse(ex.output)
+              }
+            }
+          } else if (problem.title.includes('Product of Array Except Self')) {
+            // Product of Array Except Self pattern: nums = [1,2,3,4]
+            const inputMatch = ex.input.match(/nums = (\[.*?\])/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  nums: JSON.parse(inputMatch[1])
+                },
+                output: JSON.parse(ex.output)
+              }
+            }
+          } else if (problem.title.includes('3Sum')) {
+            // 3Sum pattern: nums = [-1,0,1,2,-1,-4]
+            const inputMatch = ex.input.match(/nums = (\[.*?\])/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  nums: JSON.parse(inputMatch[1])
+                },
+                output: JSON.parse(ex.output)
+              }
+            }
+          } else if (problem.title.includes('Trapping Rain Water')) {
+            // Trapping Rain Water pattern: height = [0,1,0,2,1,0,1,3,2,1,2,1]
+            const inputMatch = ex.input.match(/height = (\[.*?\])/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  height: JSON.parse(inputMatch[1])
+                },
+                output: parseInt(ex.output)
+              }
+            }
+          } else if (problem.title.includes('Longest Substring Without Repeating Characters')) {
+            // Longest Substring pattern: s = "abcabcbb"
+            const inputMatch = ex.input.match(/s = "(.*?)"/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  s: inputMatch[1]
+                },
+                output: parseInt(ex.output)
+              }
+            }
+          } else if (problem.title.includes('Group Anagrams')) {
+            // Group Anagrams pattern: strs = ["eat","tea","tan","ate","nat","bat"]
+            const inputMatch = ex.input.match(/strs = (\[.*?\])/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  strs: JSON.parse(inputMatch[1])
+                },
+                output: JSON.parse(ex.output)
+              }
+            }
+          } else if (problem.title.includes('Palindrome Permutation')) {
+            // Palindrome Permutation pattern: s = "code"
+            const inputMatch = ex.input.match(/s = "(.*?)"/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  s: inputMatch[1]
+                },
+                output: ex.output === 'true' || ex.output === 'false' ? ex.output === 'true' : JSON.parse(ex.output)
+              }
+            }
           } else {
             // Default fallback - try to parse as arrays
             try {
@@ -491,14 +802,60 @@ const ProblemDetail = () => {
           { input: { list1: [], list2: [0] }, output: [0] },
           { input: { list1: [2], list2: [1] }, output: [1,2] }
         ]
+      } else if (problem?.title?.includes('Contains Duplicate')) {
+        allTestCases = [
+          { input: { nums: [1,2,3,1] }, output: true },
+          { input: { nums: [1,2,3,4] }, output: false },
+          { input: { nums: [1,1,1,3,3,4,3,2,4,2] }, output: true }
+        ]
+      } else if (problem?.title?.includes('Move Zeroes')) {
+        allTestCases = [
+          { input: { nums: [0,1,0,3,12] }, output: [1,3,12,0,0] },
+          { input: { nums: [0] }, output: [0] },
+          { input: { nums: [1,2,3] }, output: [1,2,3] }
+        ]
+      } else if (problem?.title?.includes('Product of Array Except Self')) {
+        allTestCases = [
+          { input: { nums: [1,2,3,4] }, output: [24,12,8,6] },
+          { input: { nums: [-1,1,0,-3,3] }, output: [0,0,9,0,0] },
+          { input: { nums: [2,3,4,5] }, output: [60,40,30,24] }
+        ]
+      } else if (problem?.title?.includes('3Sum')) {
+        allTestCases = [
+          { input: { nums: [-1,0,1,2,-1,-4] }, output: [[-1,-1,2],[-1,0,1]] },
+          { input: { nums: [0,1,1] }, output: [] },
+          { input: { nums: [0,0,0] }, output: [[0,0,0]] }
+        ]
+      } else if (problem?.title?.includes('Trapping Rain Water')) {
+        allTestCases = [
+          { input: { height: [0,1,0,2,1,0,1,3,2,1,2,1] }, output: 6 },
+          { input: { height: [4,2,0,3,2,5] }, output: 9 },
+          { input: { height: [3,0,2,0,4] }, output: 7 }
+        ]
+      } else if (problem?.title?.includes('Longest Substring Without Repeating Characters')) {
+        allTestCases = [
+          { input: { s: "abcabcbb" }, output: 3 },
+          { input: { s: "bbbbb" }, output: 1 },
+          { input: { s: "pwwkew" }, output: 3 }
+        ]
+      } else if (problem?.title?.includes('Group Anagrams')) {
+        allTestCases = [
+          { input: { strs: ["eat","tea","tan","ate","nat","bat"] }, output: [["bat"],["nat","tan"],["ate","eat","tea"]] },
+          { input: { strs: [""] }, output: [[""]] },
+          { input: { strs: ["a"] }, output: [["a"]] }
+        ]
+      } else if (problem?.title?.includes('Palindrome Permutation')) {
+        allTestCases = [
+          { input: { s: "code" }, output: false },
+          { input: { s: "aab" }, output: true },
+          { input: { s: "carerac" }, output: true }
+        ]
       } else {
         // Generic fallback
         allTestCases = [
           { input: { nums: [2, 7, 11, 15], target: 9 }, output: [0, 1] },
           { input: { nums: [3, 2, 4], target: 6 }, output: [1, 2] },
-          { input: { nums: [3, 3], target: 6 }, output: [0, 1] },
-          { input: { nums: [1, 5, 8, 10, 13], target: 18 }, output: [2, 4] },
-          { input: { nums: [0, 4, 3, 0], target: 0 }, output: [0, 3] }
+          { input: { nums: [3, 3], target: 6 }, output: [0, 1] }
         ]
       }
     }
@@ -526,13 +883,41 @@ const ProblemDetail = () => {
           if (problem?.title?.includes('Merge') && problem?.title?.includes('List')) {
             // For merge lists, exact order matters
             isCorrect = JSON.stringify(actualOutput) === JSON.stringify(testCase.output);
+          } else if (problem?.title?.includes('3Sum')) {
+            // For 3Sum, we need to sort both the outer array and inner arrays for comparison
+            const sortedActual = actualOutput.map(arr => arr.sort((a, b) => a - b)).sort();
+            const sortedExpected = testCase.output.map(arr => arr.sort((a, b) => a - b)).sort();
+            isCorrect = JSON.stringify(sortedActual) === JSON.stringify(sortedExpected);
+          } else if (problem?.title?.includes('Group Anagrams')) {
+            // For Group Anagrams, we need to sort both the outer array and inner arrays for comparison
+            const sortedActual = actualOutput.map(arr => arr.sort()).sort();
+            const sortedExpected = testCase.output.map(arr => arr.sort()).sort();
+            isCorrect = JSON.stringify(sortedActual) === JSON.stringify(sortedExpected);
           } else {
             // For other arrays (like Two Sum), order might not matter
             isCorrect = JSON.stringify(actualOutput?.sort()) === JSON.stringify(testCase.output?.sort());
           }
+        } else if (typeof actualOutput === 'boolean' && typeof testCase.output === 'boolean') {
+          // For boolean outputs
+          isCorrect = actualOutput === testCase.output;
+        } else if (typeof actualOutput === 'number' && typeof testCase.output === 'number') {
+          // For numeric outputs
+          isCorrect = actualOutput === testCase.output;
         } else {
           // For non-array outputs, direct comparison
           isCorrect = JSON.stringify(actualOutput) === JSON.stringify(testCase.output);
+        }
+
+        // Debug information for failed test cases
+        if (!isCorrect) {
+          console.log('Test case failed:', {
+            problemTitle: problem?.title,
+            functionName: functionName,
+            input: testCase.input,
+            expected: testCase.output,
+            actual: actualOutput,
+            isCorrect
+          });
         }
 
         return {
