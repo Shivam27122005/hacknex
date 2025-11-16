@@ -226,9 +226,31 @@ const ProblemDetail = () => {
       // Wrap user code in a function and execute
       // Extract function name from problem title (convert to camelCase)
       const functionName = problem?.title?.replace(/\s+/g, '') || 'solution';
+      
+      // Handle different problem types
+      let functionCall = '';
+      if (problem?.title?.includes('Two Sum') || problem?.title?.includes('Sum')) {
+        // Two Sum: twoSum(nums, target)
+        functionCall = `${functionName}(${JSON.stringify(testInput.nums)}, ${testInput.target})`;
+      } else if (problem?.title?.includes('Merge') && problem?.title?.includes('List')) {
+        // Merge Two Sorted Lists: mergeTwoLists(list1, list2)
+        functionCall = `${functionName}(${JSON.stringify(testInput.list1)}, ${JSON.stringify(testInput.list2)})`;
+      } else {
+        // Default fallback - assume first parameter is an array and second is a target
+        if (testInput.nums && testInput.target !== undefined) {
+          functionCall = `${functionName}(${JSON.stringify(testInput.nums)}, ${testInput.target})`;
+        } else if (testInput.list1 && testInput.list2) {
+          functionCall = `${functionName}(${JSON.stringify(testInput.list1)}, ${JSON.stringify(testInput.list2)})`;
+        } else {
+          // Generic call with all inputs
+          const inputValues = Object.values(testInput);
+          functionCall = `${functionName}(${inputValues.map(val => JSON.stringify(val)).join(', ')})`;
+        }
+      }
+      
       const wrappedCode = `
         ${userCode}
-        return typeof ${functionName} !== 'undefined' ? ${functionName}(${JSON.stringify(testInput.nums)}, ${testInput.target}) : null;
+        return typeof ${functionName} !== 'undefined' ? ${functionCall} : null;
       `
       
       const result = new Function(wrappedCode)()
@@ -250,33 +272,86 @@ const ProblemDetail = () => {
     setTestResults([])
     setOutput('')
 
-    // Get test cases from problem or use examples
-    const testCases = problem?.examples?.map(ex => {
-      try {
-        // Parse example input (this is simplified, real implementation would be more robust)
-        const inputMatch = ex.input.match(/nums = (\[.*?\]), target = (\d+)/)
-        if (inputMatch) {
+    // Run all test cases (use problem-specific test cases)
+    let allTestCases = []
+    
+    if (problem?.examples && problem.examples.length > 0) {
+      // Parse problem-specific test cases
+      allTestCases = problem.examples.map(ex => {
+        try {
+          // Handle different problem types
+          if (problem.title.includes('Two Sum') || problem.title.includes('Sum')) {
+            // Two Sum pattern: nums = [2,7,11,15], target = 9
+            const inputMatch = ex.input.match(/nums = (\[.*?\]), target = (\d+)/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  nums: JSON.parse(inputMatch[1]), 
+                  target: parseInt(inputMatch[2]) 
+                },
+                output: JSON.parse(ex.output)
+              }
+            }
+          } else if (problem.title.includes('Merge') && problem.title.includes('List')) {
+            // Merge Two Sorted Lists pattern: list1 = [1,2,4], list2 = [1,3,4]
+            const inputMatch = ex.input.match(/list1 = (\[.*?\]), list2 = (\[.*?\])/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  list1: JSON.parse(inputMatch[1]), 
+                  list2: JSON.parse(inputMatch[2]) 
+                },
+                output: JSON.parse(ex.output)
+              }
+            }
+          } else {
+            // Default fallback - try to parse as arrays
+            try {
+              const inputObj = JSON.parse(ex.input)
+              return {
+                input: inputObj,
+                output: JSON.parse(ex.output)
+              }
+            } catch (parseError) {
+              // If parsing fails, return basic test case
+              return {
+                input: {},
+                output: JSON.parse(ex.output)
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Failed to parse test case:', e)
+          // Return a basic test case if parsing fails
           return {
-            input: { 
-              nums: JSON.parse(inputMatch[1]), 
-              target: parseInt(inputMatch[2]) 
-            },
-            output: JSON.parse(ex.output)
+            input: {},
+            output: []
           }
         }
-      } catch (e) {
-        console.error('Failed to parse test case:', e)
+      })
+    } else {
+      // Fallback to default test cases based on problem type
+      if (problem?.title?.includes('Two Sum') || problem?.title?.includes('Sum')) {
+        allTestCases = [
+          { input: { nums: [2, 7, 11, 15], target: 9 }, output: [0, 1] },
+          { input: { nums: [3, 2, 4], target: 6 }, output: [1, 2] },
+          { input: { nums: [3, 3], target: 6 }, output: [0, 1] }
+        ]
+      } else if (problem?.title?.includes('Merge') && problem?.title?.includes('List')) {
+        allTestCases = [
+          { input: { list1: [1,2,4], list2: [1,3,4] }, output: [1,1,2,3,4,4] },
+          { input: { list1: [], list2: [] }, output: [] },
+          { input: { list1: [], list2: [0] }, output: [0] }
+        ]
+      } else {
+        // Generic fallback
+        allTestCases = [
+          { input: { nums: [2, 7, 11, 15], target: 9 }, output: [0, 1] },
+          { input: { nums: [3, 2, 4], target: 6 }, output: [1, 2] },
+          { input: { nums: [3, 3], target: 6 }, output: [0, 1] }
+        ]
       }
-      return null
-    }).filter(Boolean) || []
-
-    // Add some hardcoded test cases
-    const allTestCases = [
-      { input: { nums: [2, 7, 11, 15], target: 9 }, output: [0, 1] },
-      { input: { nums: [3, 2, 4], target: 6 }, output: [1, 2] },
-      { input: { nums: [3, 3], target: 6 }, output: [0, 1] },
-      ...testCases
-    ]
+    }
 
     setTimeout(() => {
       const results = allTestCases.slice(0, 4).map((testCase, index) => {
@@ -294,7 +369,21 @@ const ProblemDetail = () => {
         }
 
         const actualOutput = execution.result
-        const isCorrect = JSON.stringify(actualOutput?.sort()) === JSON.stringify(testCase.output?.sort())
+        // Handle different output comparison types
+        let isCorrect = false;
+        if (Array.isArray(actualOutput) && Array.isArray(testCase.output)) {
+          // For arrays, we might need to sort them for comparison
+          if (problem?.title?.includes('Merge') && problem?.title?.includes('List')) {
+            // For merge lists, exact order matters
+            isCorrect = JSON.stringify(actualOutput) === JSON.stringify(testCase.output);
+          } else {
+            // For other arrays (like Two Sum), order might not matter
+            isCorrect = JSON.stringify(actualOutput?.sort()) === JSON.stringify(testCase.output?.sort());
+          }
+        } else {
+          // For non-array outputs, direct comparison
+          isCorrect = JSON.stringify(actualOutput) === JSON.stringify(testCase.output);
+        }
 
         return {
           testCase: index + 1,
@@ -328,14 +417,91 @@ const ProblemDetail = () => {
     setTestResults([])
     setOutput('Running all test cases...')
 
-    // Run all test cases
-    const allTestCases = [
-      { input: { nums: [2, 7, 11, 15], target: 9 }, output: [0, 1] },
-      { input: { nums: [3, 2, 4], target: 6 }, output: [1, 2] },
-      { input: { nums: [3, 3], target: 6 }, output: [0, 1] },
-      { input: { nums: [1, 5, 8, 10, 13], target: 18 }, output: [2, 4] },
-      { input: { nums: [0, 4, 3, 0], target: 0 }, output: [0, 3] },
-    ]
+    // Run all test cases (use problem-specific test cases)
+    let allTestCases = []
+    
+    if (problem?.examples && problem.examples.length > 0) {
+      // Parse problem-specific test cases
+      allTestCases = problem.examples.map(ex => {
+        try {
+          // Handle different problem types
+          if (problem.title.includes('Two Sum') || problem.title.includes('Sum')) {
+            // Two Sum pattern: nums = [2,7,11,15], target = 9
+            const inputMatch = ex.input.match(/nums = (\[.*?\]), target = (\d+)/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  nums: JSON.parse(inputMatch[1]), 
+                  target: parseInt(inputMatch[2]) 
+                },
+                output: JSON.parse(ex.output)
+              }
+            }
+          } else if (problem.title.includes('Merge') && problem.title.includes('List')) {
+            // Merge Two Sorted Lists pattern: list1 = [1,2,4], list2 = [1,3,4]
+            const inputMatch = ex.input.match(/list1 = (\[.*?\]), list2 = (\[.*?\])/)
+            if (inputMatch) {
+              return {
+                input: { 
+                  list1: JSON.parse(inputMatch[1]), 
+                  list2: JSON.parse(inputMatch[2]) 
+                },
+                output: JSON.parse(ex.output)
+              }
+            }
+          } else {
+            // Default fallback - try to parse as arrays
+            try {
+              const inputObj = JSON.parse(ex.input)
+              return {
+                input: inputObj,
+                output: JSON.parse(ex.output)
+              }
+            } catch (parseError) {
+              // If parsing fails, return basic test case
+              return {
+                input: {},
+                output: JSON.parse(ex.output)
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Failed to parse test case:', e)
+          // Return a basic test case if parsing fails
+          return {
+            input: {},
+            output: []
+          }
+        }
+      })
+    } else {
+      // Fallback to default test cases based on problem type
+      if (problem?.title?.includes('Two Sum') || problem?.title?.includes('Sum')) {
+        allTestCases = [
+          { input: { nums: [2, 7, 11, 15], target: 9 }, output: [0, 1] },
+          { input: { nums: [3, 2, 4], target: 6 }, output: [1, 2] },
+          { input: { nums: [3, 3], target: 6 }, output: [0, 1] },
+          { input: { nums: [1, 5, 8, 10, 13], target: 18 }, output: [2, 4] },
+          { input: { nums: [0, 4, 3, 0], target: 0 }, output: [0, 3] }
+        ]
+      } else if (problem?.title?.includes('Merge') && problem?.title?.includes('List')) {
+        allTestCases = [
+          { input: { list1: [1,2,4], list2: [1,3,4] }, output: [1,1,2,3,4,4] },
+          { input: { list1: [], list2: [] }, output: [] },
+          { input: { list1: [], list2: [0] }, output: [0] },
+          { input: { list1: [2], list2: [1] }, output: [1,2] }
+        ]
+      } else {
+        // Generic fallback
+        allTestCases = [
+          { input: { nums: [2, 7, 11, 15], target: 9 }, output: [0, 1] },
+          { input: { nums: [3, 2, 4], target: 6 }, output: [1, 2] },
+          { input: { nums: [3, 3], target: 6 }, output: [0, 1] },
+          { input: { nums: [1, 5, 8, 10, 13], target: 18 }, output: [2, 4] },
+          { input: { nums: [0, 4, 3, 0], target: 0 }, output: [0, 3] }
+        ]
+      }
+    }
 
     setTimeout(async () => {
       const results = allTestCases.map((testCase, index) => {
@@ -353,7 +519,21 @@ const ProblemDetail = () => {
         }
 
         const actualOutput = execution.result
-        const isCorrect = JSON.stringify(actualOutput?.sort()) === JSON.stringify(testCase.output?.sort())
+        // Handle different output comparison types
+        let isCorrect = false;
+        if (Array.isArray(actualOutput) && Array.isArray(testCase.output)) {
+          // For arrays, we might need to sort them for comparison
+          if (problem?.title?.includes('Merge') && problem?.title?.includes('List')) {
+            // For merge lists, exact order matters
+            isCorrect = JSON.stringify(actualOutput) === JSON.stringify(testCase.output);
+          } else {
+            // For other arrays (like Two Sum), order might not matter
+            isCorrect = JSON.stringify(actualOutput?.sort()) === JSON.stringify(testCase.output?.sort());
+          }
+        } else {
+          // For non-array outputs, direct comparison
+          isCorrect = JSON.stringify(actualOutput) === JSON.stringify(testCase.output);
+        }
 
         return {
           testCase: index + 1,
