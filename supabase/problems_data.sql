@@ -3,8 +3,8 @@
 -- Diverse problem set covering multiple categories and difficulty levels
 -- =====================================================
 
--- Clear existing problems (optional - comment out if you want to keep existing data)
--- TRUNCATE TABLE public.problems CASCADE;
+-- Clear existing problems to avoid duplicate key conflicts
+TRUNCATE TABLE public.problems RESTART IDENTITY CASCADE;
 
 -- =====================================================
 -- ARRAY PROBLEMS
@@ -54,7 +54,7 @@ INSERT INTO public.problems (title, slug, difficulty, category, description, exa
 -- Easy Array Problems
 (
   'Contains Duplicate',
-  'contains-duplicate',
+  'contains-duplicate-arrays',
   'Easy',
   'Arrays',
   'Given an integer array nums, return true if any value appears at least twice in the array, and return false if every element is distinct.',
