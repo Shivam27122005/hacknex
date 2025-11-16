@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useUser } from '../context/UserContext'
 import { getRecentSubmissions, getUserStats } from '../services/supabaseService'
+import { supabase } from '../lib/supabase'
 import { 
   User, 
   Mail, 
@@ -10,14 +11,21 @@ import {
   Target, 
   TrendingUp, 
   CheckCircle,
-  Clock
+  Clock,
+  Camera,
+  Upload,
+  X
 } from 'lucide-react'
 
 const Profile = () => {
-  const { user } = useUser()
+  const { user, updateProfile } = useUser()
   const [stats, setStats] = useState(null)
   const [recentActivity, setRecentActivity] = useState([])
   const [loading, setLoading] = useState(true)
+  const [avatarLoading, setAvatarLoading] = useState(false)
+  const [avatarPreview, setAvatarPreview] = useState(null)
+  const [showAvatarUpload, setShowAvatarUpload] = useState(false)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -73,6 +81,94 @@ const Profile = () => {
     return date.toLocaleDateString()
   }
 
+  // Handle avatar file selection
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      // Validate file type
+      if (!file.type.match('image.*')) {
+        alert('Please select an image file')
+        return
+      }
+      
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Image size should be less than 2MB')
+        return
+      }
+      
+      // Create preview
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setAvatarPreview(e.target.result)
+        setShowAvatarUpload(true)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  // Upload avatar to Supabase Storage
+  const uploadAvatar = async () => {
+    if (!avatarPreview || !user?.id) return
+
+    setAvatarLoading(true)
+    try {
+      // Convert base64 to blob
+      const response = await fetch(avatarPreview)
+      const blob = await response.blob()
+      
+      // Create unique filename
+      const fileExt = blob.type.split('/')[1]
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+      
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, blob, {
+          cacheControl: '3600',
+          upsert: true
+        })
+      
+      if (error) throw error
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName)
+      
+      // Update user profile with new avatar URL
+      const result = await updateProfile({ avatar_url: publicUrl })
+      
+      if (result.success) {
+        setShowAvatarUpload(false)
+        setAvatarPreview(null)
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error)
+      alert('Failed to upload avatar. Please try again.')
+    } finally {
+      setAvatarLoading(false)
+    }
+  }
+
+  // Remove avatar
+  const removeAvatar = async () => {
+    try {
+      const result = await updateProfile({ avatar_url: '' })
+      if (result.success) {
+        setShowAvatarUpload(false)
+        setAvatarPreview(null)
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      console.error('Error removing avatar:', error)
+      alert('Failed to remove avatar. Please try again.')
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -109,12 +205,35 @@ const Profile = () => {
       <div className="bg-white rounded-xl shadow-md border border-gray-200 p-8">
         <div className="flex items-start space-x-8">
           {/* Avatar */}
-          <div className="flex-shrink-0">
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-3xl font-bold">
-                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-              </span>
+          <div className="flex-shrink-0 relative">
+            <div className="w-24 h-24 rounded-full overflow-hidden">
+              {user?.avatar_url ? (
+                <img 
+                  src={user.avatar_url} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <span className="text-white text-3xl font-bold">
+                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
+                </div>
+              )}
             </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-md border border-gray-200 hover:bg-gray-50 transition-colors"
+            >
+              <Camera className="w-4 h-4 text-gray-600" />
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleAvatarChange}
+              accept="image/*"
+              className="hidden"
+            />
           </div>
 
           {/* Profile Info */}
@@ -144,9 +263,63 @@ const Profile = () => {
         </div>
       </div>
 
+      {/* Avatar Upload Modal */}
+      {showAvatarUpload && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Update Profile Photo</h3>
+              <button 
+                onClick={() => {
+                  setShowAvatarUpload(false)
+                  setAvatarPreview(null)
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <img 
+                src={avatarPreview} 
+                alt="Preview" 
+                className="w-32 h-32 rounded-full mx-auto object-cover"
+              />
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={uploadAvatar}
+                disabled={avatarLoading}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center justify-center disabled:opacity-50"
+              >
+                {avatarLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload
+                  </>
+                )}
+              </button>
+              <button
+                onClick={removeAvatar}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Statistics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {stats && stats.map((stat, index) => (
           <div key={index} className="bg-white rounded-xl shadow-md border border-gray-200 p-6 text-center">
             <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center mx-auto mb-4`}>
               <stat.icon className={`w-6 h-6 ${stat.color}`} />

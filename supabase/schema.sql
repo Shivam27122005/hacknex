@@ -185,7 +185,7 @@ BEGIN
   
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to update problem acceptance rate
 CREATE OR REPLACE FUNCTION update_problem_acceptance()
@@ -203,12 +203,13 @@ BEGIN
   
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to update user_problem_status
 CREATE OR REPLACE FUNCTION update_user_problem_status()
 RETURNS TRIGGER AS $$
 BEGIN
+  -- Use security definer to bypass RLS for this function
   INSERT INTO public.user_problem_status (user_id, problem_id, status, attempts, last_attempted_at, solved_at)
   VALUES (
     NEW.user_id, 
@@ -232,7 +233,7 @@ BEGIN
   
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to handle new user creation from auth
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -320,6 +321,10 @@ CREATE POLICY "Users can insert own submissions" ON public.submissions FOR INSER
 -- User problem status policies
 CREATE POLICY "Users can view own status" ON public.user_problem_status FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own status" ON public.user_problem_status FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Functions can insert status" ON public.user_problem_status FOR INSERT WITH CHECK (true);
+
+-- Grant necessary permissions
+GRANT INSERT ON public.user_problem_status TO authenticated;
 
 -- Categories policies
 CREATE POLICY "Anyone can view categories" ON public.categories FOR SELECT USING (true);
@@ -353,7 +358,7 @@ BEGIN
   GROUP BY p.category
   ORDER BY p.category;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to get activity data for charts
 CREATE OR REPLACE FUNCTION get_user_activity(p_user_id UUID, p_days INTEGER DEFAULT 30)
@@ -374,7 +379,7 @@ BEGIN
   GROUP BY DATE(s.submitted_at)
   ORDER BY date DESC;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to get language stats
 CREATE OR REPLACE FUNCTION get_user_language_stats(p_user_id UUID)
@@ -399,7 +404,7 @@ BEGIN
   GROUP BY s.language
   ORDER BY count DESC;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to get streak calculation
 CREATE OR REPLACE FUNCTION calculate_user_streak(p_user_id UUID)
@@ -434,7 +439,7 @@ BEGIN
   
   RETURN streak;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to update user streak (call this daily or on submission)
 CREATE OR REPLACE FUNCTION update_user_streak(p_user_id UUID)
@@ -445,4 +450,38 @@ BEGIN
       updated_at = NOW()
   WHERE id = p_user_id;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =====================================================
+-- STORAGE BUCKETS
+-- =====================================================
+
+-- Create avatars storage bucket
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- Avatar storage policies
+CREATE POLICY "Avatar images are publicly accessible" ON storage.objects 
+FOR SELECT USING (bucket_id = 'avatars');
+
+CREATE POLICY "Users can upload avatars" ON storage.objects 
+FOR INSERT WITH CHECK (
+  bucket_id = 'avatars' 
+  AND auth.role() = 'authenticated'
+  AND (storage.foldername(name))[1] = auth.uid()::text
+);
+
+CREATE POLICY "Users can update their own avatars" ON storage.objects 
+FOR UPDATE USING (
+  bucket_id = 'avatars' 
+  AND auth.role() = 'authenticated'
+  AND (storage.foldername(name))[1] = auth.uid()::text
+);
+
+CREATE POLICY "Users can delete their own avatars" ON storage.objects 
+FOR DELETE USING (
+  bucket_id = 'avatars' 
+  AND auth.role() = 'authenticated'
+  AND (storage.foldername(name))[1] = auth.uid()::text
+);
