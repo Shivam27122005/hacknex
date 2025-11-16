@@ -5,7 +5,11 @@ import { fileURLToPath, URL } from 'url'
 // https://vitejs.dev/config/
 export default defineConfig({
   base: '/',
-  plugins: [react()],
+  plugins: [
+    react({
+      jsxRuntime: 'automatic'
+    })
+  ],
   server: {
     port: 3002,
     host: '0.0.0.0',
@@ -28,7 +32,7 @@ export default defineConfig({
     }
   },
   esbuild: {
-    jsxDev: true,
+    jsxDev: false,
     logOverride: { 'this-is-undefined-in-esm': 'silent' }
   },
   logLevel: 'info',
@@ -41,11 +45,16 @@ export default defineConfig({
       input: {
         main: fileURLToPath(new URL('./index.html', import.meta.url))
       }
-    }
+    },
+    // Ensure proper JSX transform for React 19
+    target: 'esnext'
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'lucide-react'],
-    force: true
+    force: true,
+    esbuildOptions: {
+      jsx: 'automatic'
+    }
   },
   clearScreen: false
 })
