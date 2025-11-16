@@ -321,6 +321,7 @@ CREATE POLICY "Users can insert own submissions" ON public.submissions FOR INSER
 -- User problem status policies
 CREATE POLICY "Users can view own status" ON public.user_problem_status FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own status" ON public.user_problem_status FOR INSERT WITH CHECK (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Functions can insert status" ON public.user_problem_status;
 CREATE POLICY "Functions can insert status" ON public.user_problem_status FOR INSERT WITH CHECK (true);
 
 -- Grant necessary permissions
@@ -460,6 +461,12 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 INSERT INTO storage.buckets (id, name, public) 
 VALUES ('avatars', 'avatars', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- Drop existing storage policies if they exist
+DROP POLICY IF EXISTS "Avatar images are publicly accessible" ON storage.objects;
+DROP POLICY IF EXISTS "Users can upload avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own avatars" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own avatars" ON storage.objects;
 
 -- Avatar storage policies
 CREATE POLICY "Avatar images are publicly accessible" ON storage.objects 
