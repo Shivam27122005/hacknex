@@ -110,6 +110,12 @@ const Profile = () => {
   // Upload avatar to Supabase Storage
   const uploadAvatar = async () => {
     if (!avatarPreview || !user?.id) return
+    
+    // Check if Supabase client is initialized
+    if (!supabase) {
+      alert('Database connection not available. Please refresh the page.')
+      return
+    }
 
     setAvatarLoading(true)
     try {
@@ -117,9 +123,11 @@ const Profile = () => {
       const response = await fetch(avatarPreview)
       const blob = await response.blob()
       
-      // Create unique filename
+      // Create unique filename with user folder
       const fileExt = blob.type.split('/')[1]
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`
+      
+      console.log('Uploading avatar:', { fileName, fileType: blob.type })
       
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
@@ -129,12 +137,19 @@ const Profile = () => {
           upsert: true
         })
       
-      if (error) throw error
+      if (error) {
+        console.error('Supabase upload error:', error)
+        throw error
+      }
+      
+      console.log('Upload successful:', data)
       
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
         .getPublicUrl(fileName)
+      
+      console.log('Public URL:', publicUrl)
       
       // Update user profile with new avatar URL
       const result = await updateProfile({ avatar_url: publicUrl })
@@ -147,7 +162,7 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('Error uploading avatar:', error)
-      alert('Failed to upload avatar. Please try again.')
+      alert(`Failed to upload avatar: ${error.message || 'Please try again.'}`)
     } finally {
       setAvatarLoading(false)
     }
@@ -156,6 +171,24 @@ const Profile = () => {
   // Remove avatar
   const removeAvatar = async () => {
     try {
+      // If user has an existing avatar, try to delete the file
+      if (user?.avatar_url) {
+        // Extract the file path from the URL
+        const url = new URL(user.avatar_url)
+        const filePath = url.pathname.split('/').slice(2).join('/') // Remove /storage/v1/object/public/
+        
+        if (filePath) {
+          console.log('Deleting avatar file:', filePath)
+          const { error: deleteError } = await supabase.storage
+            .from('avatars')
+            .remove([filePath])
+          
+          if (deleteError) {
+            console.error('Error deleting avatar file:', deleteError)
+          }
+        }
+      }
+      
       const result = await updateProfile({ avatar_url: '' })
       if (result.success) {
         setShowAvatarUpload(false)
@@ -165,7 +198,7 @@ const Profile = () => {
       }
     } catch (error) {
       console.error('Error removing avatar:', error)
-      alert('Failed to remove avatar. Please try again.')
+      alert(`Failed to remove avatar: ${error.message || 'Please try again.'}`)
     }
   }
 

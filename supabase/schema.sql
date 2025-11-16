@@ -462,6 +462,11 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('avatars', 'avatars', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
+-- Ensure the bucket exists and is public
+UPDATE storage.buckets 
+SET public = true 
+WHERE id = 'avatars';
+
 -- Drop existing storage policies if they exist
 DROP POLICY IF EXISTS "Avatar images are publicly accessible" ON storage.objects;
 DROP POLICY IF EXISTS "Users can upload avatars" ON storage.objects;
