@@ -7,23 +7,23 @@
   # Directory that contains the deploy-ready HTML files and assets
   publish = "dist"
   
-  # Build command
-  command = "npm run build"
+  # Build command (using legacy-peer-deps for React 19 compatibility)
+  command = "npm install --legacy-peer-deps && npm run build"
 
 # Production context: all deploys from the main branch
 [context.production]
-  command = "npm run build"
+  command = "npm install --legacy-peer-deps && npm run build"
   
 [context.production.environment]
   NODE_VERSION = "18"
 
 # Deploy Preview context: all deploys from pull requests
 [context.deploy-preview]
-  command = "npm run build"
+  command = "npm install --legacy-peer-deps && npm run build"
 
 # Branch deploy context: all deploys from branches
 [context.branch-deploy]
-  command = "npm run build"
+  command = "npm install --legacy-peer-deps && npm run build"
 
 # Redirect rules
 [[redirects]]
