@@ -24,9 +24,14 @@ export const getUserProfile = async (userId) => {
 
 export const updateUserProfile = async (userId, updates) => {
   try {
+    // Filter out any undefined or null values
+    const cleanUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, value]) => value !== undefined && value !== null)
+    );
+    
     const { data, error } = await supabase
       .from('users')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...cleanUpdates, updated_at: new Date().toISOString() })
       .eq('id', userId)
       .select()
       .single()
