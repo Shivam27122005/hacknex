@@ -1,0 +1,159 @@
+/* Mood-based animations and effects */
+
+/* Excited mood - pulsing energy with display changes */
+.mood-excited {
+  animation: excited-pulse 2s ease-in-out infinite;
+  background: linear-gradient(45deg, rgba(255, 107, 107, 0.02), rgba(255, 167, 38, 0.02)) !important;
+}
+
+.mood-excited * {
+  border-color: #ff6b6b !important;
+}
+
+.mood-excited .bg-white {
+  background: rgba(255, 107, 107, 0.03) !important;
+}
+
+.mood-excited nav, .mood-excited aside {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.05), rgba(255, 167, 38, 0.05)) !important;
+}
+
+@keyframes excited-pulse {
+  0%, 100% { 
+    filter: brightness(1.05) saturate(1.4) hue-rotate(10deg);
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.1);
+  }
+  50% { 
+    filter: brightness(1.15) saturate(1.5) hue-rotate(15deg);
+    box-shadow: 0 0 30px rgba(255, 107, 107, 0.2);
+  }
+}
+
+/* Focused mood - steady concentration */
+.mood-focused {
+  animation: focused-steady 4s ease-in-out infinite;
+}
+
+@keyframes focused-steady {
+  0%, 100% { 
+    filter: brightness(1.02) saturate(1.1) hue-rotate(0deg);
+  }
+  50% { 
+    filter: brightness(1.05) saturate(1.15) hue-rotate(2deg);
+  }
+}
+
+/* Creative mood - flowing inspiration */
+.mood-creative {
+  animation: creative-flow 3s ease-in-out infinite;
+}
+
+@keyframes creative-flow {
+  0% { 
+    filter: brightness(1.05) saturate(1.3) hue-rotate(15deg);
+  }
+  33% { 
+    filter: brightness(1.08) saturate(1.35) hue-rotate(20deg);
+  }
+  66% { 
+    filter: brightness(1.03) saturate(1.25) hue-rotate(10deg);
+  }
+  100% { 
+    filter: brightness(1.05) saturate(1.3) hue-rotate(15deg);
+  }
+}
+
+/* Tired mood - slow, gentle movement */
+.mood-tired {
+  animation: tired-slow 6s ease-in-out infinite;
+}
+
+@keyframes tired-slow {
+  0%, 100% { 
+    filter: brightness(0.9) saturate(0.7) hue-rotate(-5deg);
+  }
+  50% { 
+    filter: brightness(0.92) saturate(0.75) hue-rotate(-3deg);
+  }
+}
+
+/* Frustrated mood - tense, sharp movements */
+.mood-frustrated {
+  animation: frustrated-tense 1.5s ease-in-out infinite;
+}
+
+@keyframes frustrated-tense {
+  0%, 100% { 
+    filter: brightness(0.95) saturate(1.2) hue-rotate(-10deg);
+  }
+  25% { 
+    filter: brightness(0.98) saturate(1.25) hue-rotate(-8deg);
+  }
+  75% { 
+    filter: brightness(0.92) saturate(1.15) hue-rotate(-12deg);
+  }
+}
+
+/* Productive mood - efficient, rhythmic */
+.mood-productive {
+  animation: productive-efficient 2.5s ease-in-out infinite;
+}
+
+@keyframes productive-efficient {
+  0%, 100% { 
+    filter: brightness(1.05) saturate(1.2) hue-rotate(5deg);
+  }
+  50% { 
+    filter: brightness(1.08) saturate(1.25) hue-rotate(8deg);
+  }
+}
+
+/* Mood overlay transitions */
+#mood-overlay {
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom CSS properties for mood theming */
+:root {
+  --mood-primary: #6b7280;
+  --mood-secondary: #4b5563;
+  --mood-accent: #9ca3af;
+  --mood-bg: transparent;
+  --mood-gradient: linear-gradient(135deg, #6b7280, #4b5563);
+}
+
+/* Mood-aware components */
+.mood-button {
+  background: var(--mood-gradient);
+  border-color: var(--mood-primary);
+  transition: all 0.3s ease;
+}
+
+.mood-button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.mood-accent {
+  color: var(--mood-accent);
+}
+
+.mood-bg {
+  background-color: var(--mood-bg);
+}
+
+/* Responsive mood effects */
+@media (prefers-reduced-motion: reduce) {
+  .mood-excited,
+  .mood-focused,
+  .mood-creative,
+  .mood-tired,
+  .mood-frustrated,
+  .mood-productive {
+    animation: none;
+  }
+  
+  #mood-overlay {
+    transition: opacity 0.3s ease;
+  }
+}
