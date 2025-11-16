@@ -12,6 +12,45 @@
 
 INSERT INTO public.problems (title, slug, difficulty, category, description, examples, constraints, related_topics, companies, acceptance, is_premium, test_cases, starter_code) VALUES
 
+-- Classic Two Sum Problem
+(
+  'Two Sum',
+  'two-sum',
+  'Easy',
+  'Arrays',
+  'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice.',
+  '[
+    {
+      "input": "nums = [2,7,11,15], target = 9",
+      "output": "[0,1]",
+      "explanation": "Because nums[0] + nums[1] == 9, we return [0, 1]."
+    },
+    {
+      "input": "nums = [3,2,4], target = 6",
+      "output": "[1,2]",
+      "explanation": "Because nums[1] + nums[2] == 6, we return [1, 2]."
+    },
+    {
+      "input": "nums = [3,3], target = 6",
+      "output": "[0,1]",
+      "explanation": "Because nums[0] + nums[1] == 6, we return [0, 1]."
+    }
+  ]'::jsonb,
+  ARRAY['2 <= nums.length <= 10^4', '-10^9 <= nums[i] <= 10^9', '-10^9 <= target <= 10^9'],
+  ARRAY['Array', 'Hash Table'],
+  ARRAY['Amazon', 'Google', 'Apple', 'Microsoft'],
+  49.2,
+  false,
+  '[]'::jsonb,
+  '{
+    "javascript": "var twoSum = function(nums, target) {\n    // Your code here\n};",
+    "python": "def twoSum(self, nums: List[int], target: int) -> List[int]:\n    # Your code here\n    pass",
+    "java": "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Your code here\n    }\n}"
+  }'::jsonb
+),
+
+-- Continue with existing problems
+
 -- Easy Array Problems
 (
   'Contains Duplicate',

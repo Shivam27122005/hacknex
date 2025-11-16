@@ -224,9 +224,11 @@ const ProblemDetail = () => {
       const startTime = performance.now()
       
       // Wrap user code in a function and execute
+      // Extract function name from problem title (convert to camelCase)
+      const functionName = problem?.title?.replace(/\s+/g, '') || 'solution';
       const wrappedCode = `
         ${userCode}
-        return typeof twoSum !== 'undefined' ? twoSum(${JSON.stringify(testInput.nums)}, ${testInput.target}) : null;
+        return typeof ${functionName} !== 'undefined' ? ${functionName}(${JSON.stringify(testInput.nums)}, ${testInput.target}) : null;
       `
       
       const result = new Function(wrappedCode)()
